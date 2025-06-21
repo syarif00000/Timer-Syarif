@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Timer</title>
+    <!-- Memuat Tailwind CSS dari CDN untuk styling yang mudah -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Mengatur font Inter untuk tampilan yang bersih */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Latar belakang gelap */
+            color: #e2e8f0; /* Warna teks terang */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Memastikan halaman mengisi tinggi viewport */
+            margin: 0;
+            padding: 20px; /* Padding di sekitar konten */
+            box-sizing: border-box; /* Memastikan padding termasuk dalam lebar/tinggi elemen */
+        }
+        /* Styling tambahan untuk elemen timer */
+        .timer-container {
+            background-color: #2d3748; /* Warna latar belakang kontainer */
+            padding: 30px;
+            border-radius: 1rem; /* Sudut membulat */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Bayangan */
+            text-align: center;
+            max-width: 90%; /* Lebar maksimum responsif */
+            width: 500px; /* Lebar tetap untuk desktop */
+        }
+        .time-display {
+            font-size: 4.5rem; /* Ukuran font waktu */
+            font-weight: bold;
+            margin-bottom: 25px;
+            letter-spacing: 2px; /* Spasi antar huruf */
+            color: #63b3ed; /* Warna biru cerah untuk waktu */
+        }
+        .control-buttons button {
+            background-color: #4a5568; /* Warna latar belakang tombol kontrol */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 0.75rem; /* Sudut membulat pada tombol */
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s; /* Transisi halus */
+            margin: 0 10px; /* Jarak antar tombol */
+            border: none; /* Hilangkan border default */
+        }
+        .control-buttons button:hover {
+            background-color: #6a768f; /* Warna saat hover */
+            transform: translateY(-2px); /* Efek sedikit naik saat hover */
+        }
+        .control-buttons button:active {
+            transform: translateY(0); /* Kembali normal saat di-klik */
+        }
+        .adjust-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px; /* Jarak antar tombol penyesuaian */
+            margin-top: 25px;
+            flex-wrap: wrap; /* Tombol bisa wrap ke baris baru pada layar kecil */
+        }
+        .adjust-buttons button {
+            background-color: #38a169; /* Warna hijau untuk tombol tambah */
+            color: white;
+            padding: 10px 20px;
+            border-radius: 0.5rem; /* Sudut membulat */
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            border: none;
+        }
+        .adjust-buttons button.minus {
+            background-color: #e53e3e; /* Warna merah untuk tombol kurang */
+        }
+        .adjust-buttons button:hover {
+            opacity: 0.9; /* Sedikit transparansi saat hover */
+            transform: translateY(-1px);
+        }
+        .adjust-buttons button:active {
+            transform: translateY(0);
+        }
+
+        /* Responsif untuk layar kecil */
+        @media (max-width: 600px) {
+            .time-display {
+                font-size: 3rem; /* Ukuran font lebih kecil untuk mobile */
+            }
+            .control-buttons {
+                display: flex;
+                flex-direction: column; /* Tombol kontrol vertikal untuk mobile */
+                gap: 15px; /* Jarak antar tombol */
+            }
+            .control-buttons button {
+                margin: 0; /* Hilangkan margin horizontal */
+            }
+            .adjust-buttons {
+                flex-direction: column; /* Tombol penyesuaian vertikal untuk mobile */
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container">
+        <h1 class="text-3xl font-semibold mb-6">Web Timer</h1>
+        <div class="time-display" id="time-display">00:00</div>
+
+        <div class="control-buttons">
+            <button id="start-btn" class="hover:bg-green-700">Mulai</button>
+            <button id="pause-btn" class="hover:bg-yellow-700">Jeda</button>
+            <button id="reset-btn" class="hover:bg-red-700">Reset</button>
+        </div>
+
+        <div class="adjust-buttons">
+            <button id="add-5-minute" class="hover:bg-green-700">+5 Menit</button>
+            <button id="add-30-minute" class="hover:bg-green-700">+30 Menit</button>
+            <button id="add-hour" class="hover:bg-green-700">+1 Jam</button>
+            <button id="add-minute" class="hover:bg-green-700">+1 Menit</button>
+            <button id="minus-minute" class="minus hover:bg-red-700">-1 Menit</button>
+            <button id="add-second" class="hover:bg-green-700">+1 Detik</button>
+            <button id="minus-second" class="minus hover:bg-red-700">-1 Detik</button>
+        </div>
+    </div>
+
+    <script>
+        // Getting DOM elements
+        const timeDisplay = document.getElementById('time-display');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const addMinuteBtn = document.getElementById('add-minute');
+        const minusMinuteBtn = document.getElementById('minus-minute');
+        const addSecondBtn = document.getElementById('add-second');
+        const minusSecondBtn = document.getElementById('minus-second');
+        // New buttons for larger time adjustments
+        const add5MinuteBtn = document.getElementById('add-5-minute');
+        const add30MinuteBtn = document.getElementById('add-30-minute');
+        const addHourBtn = document.getElementById('add-hour');
+
+        let totalSeconds = 0; // Time in seconds
+        let timerInterval; // Variable to store the timer interval ID
+        let isRunning = false; // Timer status
+
+        /**
+         * Function to update the time display in the DOM.
+         * @param {number} seconds - Total number of seconds.
+         */
+        function updateDisplay(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            // Format minutes and seconds to always be two digits (e.g., 05, 12)
+            const formattedTime = `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+            timeDisplay.textContent = formattedTime;
+        }
+
+        /**
+         * Function to start or resume the timer.
+         */
+        function startTimer() {
+            if (!isRunning) { // Only start if the timer is not already running
+                isRunning = true;
+                timerInterval = setInterval(() => {
+                    if (totalSeconds > 0) {
+                        totalSeconds--; // Decrease by 1 second every second
+                        updateDisplay(totalSeconds);
+                    } else {
+                        // Timer finished, stop the interval and notify
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        alert("Waktu habis!"); // Using a simple alert, can be replaced with a custom modal
+                        // Option: can play a sound or other visualization here
+                    }
+                }, 1000); // Interval 1000ms = 1 second
+            }
+        }
+
+        /**
+         * Function to pause the timer.
+         */
+        function pauseTimer() {
+            if (isRunning) { // Only pause if the timer is running
+                clearInterval(timerInterval); // Stop the interval
+                isRunning = false;
+            }
+        }
+
+        /**
+         * Function to reset the timer to 00:00.
+         */
+        function resetTimer() {
+            pauseTimer(); // Ensure the timer is stopped
+            totalSeconds = 0; // Reset seconds to 0
+            updateDisplay(totalSeconds); // Update the display
+        }
+
+        /**
+         * Function to adjust the timer time.
+         * @param {number} amount - The number of seconds to add/subtract.
+         */
+        function adjustTime(amount) {
+            totalSeconds += amount;
+            // Ensure time is not less than 0
+            if (totalSeconds < 0) {
+                totalSeconds = 0;
+            }
+            updateDisplay(totalSeconds);
+            // If the timer is running, restart it so changes are immediately visible
+            if (isRunning) {
+                pauseTimer();
+                startTimer();
+            }
+        }
+
+        // Add event listeners to buttons
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        addMinuteBtn.addEventListener('click', () => adjustTime(60)); // Add 60 seconds (1 minute)
+        minusMinuteBtn.addEventListener('click', () => adjustTime(-60)); // Subtract 60 seconds (1 minute)
+        addSecondBtn.addEventListener('click', () => adjustTime(1)); // Add 1 second
+        minusSecondBtn.addEventListener('click', () => adjustTime(-1)); // Subtract 1 second
+
+        // New event listeners for larger adjustments
+        add5MinuteBtn.addEventListener('click', () => adjustTime(5 * 60)); // Add 5 minutes
+        add30MinuteBtn.addEventListener('click', () => adjustTime(30 * 60)); // Add 30 minutes
+        addHourBtn.addEventListener('click', () => adjustTime(60 * 60)); // Add 1 hour
+
+        // Initialize display when the page first loads
+        updateDisplay(totalSeconds);
+    </script>
+</body>
+</html>
